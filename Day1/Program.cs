@@ -1012,20 +1012,29 @@
         static void Main(string[] args)
         {
             var calibrationValuesSum = 0;
+            var linesCount = 0;
 
-            var lineCount = 0;
-            using (StringReader reader = new StringReader(_input))
+            try
             {
-                while (reader.Peek() > 0)
+                using (StringReader reader = new StringReader(_input))
                 {
-                    string line = reader.ReadLine();
-                    calibrationValuesSum = calibrationValuesSum + CalculateCalibrationValue(line);
-                    lineCount++;
+                    while (reader.Peek() > 0)
+                    {
+                        string line = reader.ReadLine();
+                        calibrationValuesSum = calibrationValuesSum + CalculateCalibrationValue(line);
+                        linesCount++;
+                    }
                 }
-            }
 
-            Console.WriteLine($"Lines count: {lineCount}");
-            Console.WriteLine($"Sum of calibration values: {calibrationValuesSum}");
+                Console.WriteLine($"Sum of calibration values: {calibrationValuesSum}");
+                Console.WriteLine($"Lines count: {linesCount}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error at line: {linesCount}");
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+            }
         }
 
         private static int CalculateCalibrationValue(string input)
