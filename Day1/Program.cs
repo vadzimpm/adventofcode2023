@@ -1039,8 +1039,11 @@
 
         private static int CalculateCalibrationValue(string input)
         {
-            var firstDigit = (int)char.GetNumericValue(input.First(i => char.IsDigit(i)));
-            var lastDigit = (int)char.GetNumericValue(input.Last(i => char.IsDigit(i)));
+            var firstDigitNumeric = (int)char.GetNumericValue(input.FirstOrDefault(i => char.IsDigit(i)));
+            var lastDigitNumeric = (int)char.GetNumericValue(input.LastOrDefault(i => char.IsDigit(i)));
+
+            var firstDigit = firstDigitNumeric == -1 ? 0 : firstDigitNumeric;
+            var lastDigit = lastDigitNumeric == -1 ? 0 : lastDigitNumeric;
 
             return firstDigit * 10 + lastDigit;
         }
