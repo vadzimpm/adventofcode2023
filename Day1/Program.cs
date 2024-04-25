@@ -1005,23 +1005,43 @@
                                         sevenbsixsbzmone55";
         #endregion
 
+        // digit answer: 54667
+        // full answer: ?
+
+        // sample answer: 142 (12, 38, 15, 77)
         private static string _test = @"1abc2
                                         pqr3stu8vwx
                                         a1b2c3d4e5f
                                         treb7uchet";
+
+        // sample answer: 281 (29, 83, 13, 24, 42, 14, 76)
+        private static string _test_part_2 = @"two1nine
+                                               eightwothree
+                                               abcone2threexyz
+                                               xtwone3four
+                                               4nineeightseven2
+                                               zoneight234
+                                               7pqrstsixteen";
+
+        // sample answer: 91 (29, 47, 15)
+        private static string _test_part_3 = @"two1nine
+                                               4nineeightseven
+                                               zoneight23fivex";
+
         static void Main(string[] args)
         {
             var calibrationValuesSum = 0;
             var linesCount = 0;
+            var calibrationDocument = _input;
 
             try
             {
-                using (StringReader reader = new StringReader(_input))
+                using (StringReader reader = new StringReader(calibrationDocument))
                 {
                     while (reader.Peek() > 0)
                     {
                         string line = reader.ReadLine();
-                        calibrationValuesSum = calibrationValuesSum + CalculateCalibrationValue(line);
+                        calibrationValuesSum = calibrationValuesSum + CalculateDigitCalibrationValue(line);
                         linesCount++;
                     }
                 }
@@ -1037,7 +1057,7 @@
             }
         }
 
-        private static int CalculateCalibrationValue(string input)
+        private static int CalculateDigitCalibrationValue(string input)
         {
             var firstDigitNumeric = (int)char.GetNumericValue(input.FirstOrDefault(i => char.IsDigit(i)));
             var lastDigitNumeric = (int)char.GetNumericValue(input.LastOrDefault(i => char.IsDigit(i)));
