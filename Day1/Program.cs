@@ -1006,7 +1006,7 @@
         #endregion
 
         // digit answer: 54667
-        // full answer: ?
+        // full answer: 54203
 
         // sample answer: 142 (12, 38, 15, 77)
         private static string _test = @"1abc2
@@ -1023,8 +1023,10 @@
                                                zoneight234
                                                7pqrstsixteen";
 
-        // sample answer: 91 (29, 47, 15)
-        private static string _test_part_3 = @"two1nine
+        // sample answer: 102 (11, 29, 47, 15)
+        private static string _test_part_3 = @"abcxyz
+                                               1oneone
+                                               two1nine
                                                4nineeightseven
                                                zoneight23fivex";
 
@@ -1040,8 +1042,11 @@
                 {
                     while (reader.Peek() > 0)
                     {
-                        string line = reader.ReadLine();
-                        calibrationValuesSum = calibrationValuesSum + CalculateDigitCalibrationValue(line);
+                        string line = reader.ReadLine().Trim();
+                        var digitValues = GetDigitsWithIndexes(line);
+                        var spokenValues = GetSpokenDigitsWithIndexes(line);
+                        calibrationValuesSum = calibrationValuesSum + CalculateCalibrationValue(digitValues, spokenValues);
+
                         linesCount++;
                     }
                 }
@@ -1057,15 +1062,137 @@
             }
         }
 
-        private static int CalculateDigitCalibrationValue(string input)
+        private static Dictionary<int, int> GetDigitsWithIndexes(string input)
         {
-            var firstDigitNumeric = (int)char.GetNumericValue(input.FirstOrDefault(i => char.IsDigit(i)));
-            var lastDigitNumeric = (int)char.GetNumericValue(input.LastOrDefault(i => char.IsDigit(i)));
+            var digitValuesWithIndexes = new Dictionary<int, int>();
 
-            var firstDigit = firstDigitNumeric == -1 ? 0 : firstDigitNumeric;
-            var lastDigit = lastDigitNumeric == -1 ? 0 : lastDigitNumeric;
+            dynamic firstResult = input
+                .Where(i => char.IsDigit(i))
+                .Select(i => new
+                {
+                    index = input.IndexOf(i),
+                    value = (int)char.GetNumericValue(i)
+                })
+                .FirstOrDefault()!;
+
+            dynamic lastResult = input
+                .Where(i => char.IsDigit(i))
+                .Select(i => new
+                {
+                    index = input.LastIndexOf(i),
+                    value = (int)char.GetNumericValue(i)
+                })
+                .LastOrDefault()!;
+
+            if (firstResult != null)
+                digitValuesWithIndexes.Add(firstResult.index, firstResult.value);
+
+            if (lastResult != null && !digitValuesWithIndexes.ContainsKey(lastResult.index))
+                digitValuesWithIndexes.Add(lastResult.index, lastResult.value);
+
+            return digitValuesWithIndexes;
+        }
+
+        private static Dictionary<int, int> GetSpokenDigitsWithIndexes(string input)
+        {
+            // populate dictionary: key - index, value - number
+
+            var digitDict = new Dictionary<int, int>(2); // default capacity for first and last number
+
+            foreach (var digitEntry in SpokenDigits)
+            {
+                int number = digitEntry.Value;
+
+                // get first and last entry in case of same number appears multiple times
+                int firstNumberIndex = input.IndexOf(digitEntry.Key);
+                int lastNumberIndex = input.LastIndexOf(digitEntry.Key);
+
+                if (firstNumberIndex != -1)
+                    digitDict.Add(firstNumberIndex, number);
+
+                if (lastNumberIndex != firstNumberIndex)
+                    digitDict.Add(lastNumberIndex, number);
+            }
+
+            var sortedDictResult = digitDict.OrderBy(o => o.Key).ToDictionary(d => d.Key, d => d.Value);
+
+            return sortedDictResult;
+        }
+
+        private static int CalculateCalibrationValue(Dictionary<int, int> digitValuesWithIndexes, Dictionary<int, int> spokenDigitsWithIndexes)
+        {
+            var calibrationValue = 0;
+
+            if (!digitValuesWithIndexes.Any() && !spokenDigitsWithIndexes.Any())
+                return calibrationValue;
+
+            KeyValuePair<int, int> firstDigitItem = new KeyValuePair<int, int>(-1, -1),
+                lastDigitItem = new KeyValuePair<int, int>(-1, -1),
+                firstSpokenItem = new KeyValuePair<int, int>(-1, -1),
+                lastSpokenItem = new KeyValuePair<int, int>(-1, -1);
+
+            if (digitValuesWithIndexes.Any())
+            {
+                firstDigitItem = digitValuesWithIndexes.FirstOrDefault();
+                lastDigitItem = digitValuesWithIndexes.LastOrDefault();
+
+                // no spoken values
+                if (!spokenDigitsWithIndexes.Any())
+                {
+                    calibrationValue = CalculateNumber(firstDigitItem.Value, lastDigitItem.Value);
+                    return calibrationValue;
+                }
+            }
+
+            if (spokenDigitsWithIndexes.Any())
+            {
+                firstSpokenItem = spokenDigitsWithIndexes.FirstOrDefault();
+                lastSpokenItem = spokenDigitsWithIndexes.LastOrDefault();
+
+                // no digit values
+                if (!digitValuesWithIndexes.Any())
+                {
+                    calibrationValue = CalculateNumber(firstSpokenItem.Value, lastSpokenItem.Value);
+                    return calibrationValue;
+                }
+            }
+
+            // select min and max from both dictionaries
+            var (firstValue, lastValue) = CalculateMinAndMaxValue(firstDigitItem, lastDigitItem, firstSpokenItem, lastSpokenItem);
+            
+            calibrationValue = CalculateNumber(firstValue, lastValue);
+
+            return calibrationValue;
+        }
+
+        private static int CalculateNumber(int firstValue, int lastValue)
+        {
+            var firstDigit = firstValue == -1 ? 0 : firstValue;
+            var lastDigit = lastValue == -1 ? 0 : lastValue;
 
             return firstDigit * 10 + lastDigit;
         }
+
+        private static Tuple<int,int> CalculateMinAndMaxValue(KeyValuePair<int, int> firstDigitItem, KeyValuePair<int, int> lastDigitItem,
+            KeyValuePair<int, int> firstSpokenItem, KeyValuePair<int, int> lastSpokenItem)
+        {
+            var firstValue = firstDigitItem.Key <= firstSpokenItem.Key ? firstDigitItem.Value : firstSpokenItem.Value;
+            var lastValue = lastDigitItem.Key >= lastSpokenItem.Key ? lastDigitItem.Value : lastSpokenItem.Value; 
+
+            return Tuple.Create(firstValue, lastValue);
+        }
+
+        private static Dictionary<string, int> SpokenDigits = new Dictionary<string, int>
+        {
+            { "one", 1 },
+            { "two", 2 },
+            { "three", 3 },
+            { "four", 4 },
+            { "five", 5 },
+            { "six", 6 },
+            { "seven", 7 },
+            { "eight", 8 },
+            { "nine", 9 },
+        };
     }
 }
